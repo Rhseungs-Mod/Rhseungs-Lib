@@ -17,15 +17,24 @@
 	"entrypoints": {
 		"main": [
 			{
-				"value": "net.rhseung.rhseungslib.ExampleMod",
+				"value": "net.rhseung.rhseungslib.MainInitializer",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "net.rhseung.rhseungslib.ClientInitializer",
 				"adapter": "kotlin"
 			}
 		],
 		"fabric-datagen": [
 			{
-				"value": "net.rhseung.rhseungslib.ExampleModDataGenerator",
+				"value": "net.rhseung.rhseungslib.DataGenerator",
 				"adapter": "kotlin"
 			}
+		],
+		"preLaunch": [
+			"com.llamalad7.mixinextras.MixinExtrasBootstrap::init"
 		]
 	},
 	"mixins": [

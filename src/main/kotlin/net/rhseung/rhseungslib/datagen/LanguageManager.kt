@@ -14,7 +14,7 @@ class LanguageManager(
 	val translationBuilder: TranslationBuilder
 ) {
 	fun generate(item: BasicItem, name: String = "") {
-		translationBuilder.add(item, if (name.isBlank()) item.id.toDisplayName() else name)
+		translationBuilder.add(item, if (name.isBlank()) item.id.path.toDisplayName() else name)
 	}
 	
 	fun generate(item: Item, name: String = "") {
@@ -22,7 +22,7 @@ class LanguageManager(
 	}
 	
 	fun generate(block: BasicBlock, name: String = "") {
-		translationBuilder.add(block, if (name.isBlank()) block.path.toDisplayName() else name)
+		translationBuilder.add(block, if (name.isBlank()) block.id.path.toDisplayName() else name)
 	}
 	
 	fun generate(block: Block, name: String = "") {

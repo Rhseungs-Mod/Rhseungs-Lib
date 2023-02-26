@@ -3,16 +3,14 @@ package net.rhseung.rhseungslib.api
 import net.minecraft.text.MutableText
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
-import net.rhseung.rhseungslib.MainInitializer
+import net.rhseung.rhseungslib.Mod
+import net.rhseung.rhseungslib.api.classes.Color
 
 object Text {
-	fun modID(path: String) = Identifier(MainInitializer.MOD_ID, path)
-	fun minecraftID(path: String) = Identifier("minecraft", path)
-	
 	fun String.toPathName() = this.lowercase().replace(" ", "_")
 	
-	fun String.toDisplayName() =
-		this.lowercase().split("_").joinToString(" ") { it.replaceFirstChar { it.titlecase() } }
+	fun String.toDisplayName() = this.lowercase().split("/").reversed().map { it.split("_") }.flatten()
+		.joinToString(" ") { it.replaceFirstChar { it.titlecase() } }
 	
 	fun Double.toText(): Text {
 		return Text.literal(
@@ -47,9 +45,15 @@ object Text {
 		val arr = newText.split("\n").filter { e -> e != "" }
 		var ret = Text.literal("")
 		var idx = 0
+		
 		for (e in arr) {
 			ret = if (e.startsWith('#')) {
-				ret.append(coloring(e.substring(1), if (colors.count() > idx) colors[idx++] else Color.WHITE))
+				ret.append(
+					coloring(
+						e.substring(1),
+						if (colors.count() > idx) colors[idx++] else Color.WHITE
+					)
+				)
 			}
 			else {
 				ret.append(e)

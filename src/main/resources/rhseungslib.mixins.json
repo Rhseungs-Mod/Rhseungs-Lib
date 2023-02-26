@@ -3,9 +3,12 @@
 	"package": "net.rhseung.rhseungslib.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"Mixin"
+		"ScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
-	}
+	},
+	"client": [
+		"tooltip.ComponentMixin"
+	]
 }

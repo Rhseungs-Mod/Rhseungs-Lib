@@ -17,19 +17,19 @@
 	"entrypoints": {
 		"main": [
 			{
-				"value": "net.rhseung.rhseungslib.MainInitializer",
+				"value": "net.rhseung.rhseungslib.Mod",
 				"adapter": "kotlin"
 			}
 		],
 		"client": [
 			{
-				"value": "net.rhseung.rhseungslib.ClientInitializer",
+				"value": "net.rhseung.rhseungslib.Client",
 				"adapter": "kotlin"
 			}
 		],
 		"fabric-datagen": [
 			{
-				"value": "net.rhseung.rhseungslib.DataGenerator",
+				"value": "net.rhseung.rhseungslib.Datagen",
 				"adapter": "kotlin"
 			}
 		],

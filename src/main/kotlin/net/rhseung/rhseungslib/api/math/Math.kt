@@ -1,4 +1,4 @@
-package net.rhseung.rhseungslib.api
+package net.rhseung.rhseungslib.api.math
 
 import kotlin.math.pow
 import kotlin.math.roundToInt

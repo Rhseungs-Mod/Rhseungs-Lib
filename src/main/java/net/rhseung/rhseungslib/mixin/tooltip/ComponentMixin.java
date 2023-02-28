@@ -4,7 +4,7 @@ import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.item.BundleTooltipData;
 import net.minecraft.client.item.TooltipData;
 import net.rhseung.rhseungslib.render.tooltip.component.BundleTooltipComponent;
-import net.rhseung.rhseungslib.things.AdaptiveTooltipComponent;
+import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

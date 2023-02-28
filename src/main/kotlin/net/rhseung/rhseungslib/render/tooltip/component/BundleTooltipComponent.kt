@@ -10,11 +10,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.client.item.BundleTooltipData
 import net.minecraft.client.render.item.ItemRenderer
 import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.item.ItemStack
-import net.minecraft.util.Identifier
-import net.minecraft.util.collection.DefaultedList
 import net.rhseung.rhseungslib.Mod.minecraftID
-import net.rhseung.rhseungslib.things.AdaptiveTooltipComponent
 import kotlin.math.ceil
 import kotlin.math.sqrt
 
@@ -33,34 +29,31 @@ class BundleTooltipComponent constructor(
 		return getRows() * HEIGHT_PER_ROW + GAP_BETWEEN_SLOT + 4
 	}
 	
-	override fun getWidth(textRenderer: TextRenderer?): Int {
+	override fun getWidth(textRenderer: TextRenderer): Int {
 		return getColumns() * WIDTH_PER_COLUMN + GAP_BETWEEN_SLOT
 	}
 	
 	override fun drawItems(
 		textRenderer: TextRenderer,
-		x0: Int,
-		y0: Int,
+		startX: Int,
+		startY: Int,
 		matrices: MatrixStack,
 		itemRenderer: ItemRenderer,
-		z0: Int,
+		z: Int,
 	) {
-		val x = x0
-		val y = y0
-		val z = z0
+		val maxRow = getRows()
+		val maxColumn = getColumns()
 		
-		val i = getColumns()
-		val j = getRows()
-		val bl = occupancy >= 64
-		var k = 0
-		for (l in 0 until j) {
-			for (m in 0 until i) {
-				val n = x + m * WIDTH_PER_COLUMN + 1
-				val o = y + l * HEIGHT_PER_ROW + 1
-				drawSlot(n, o, k++, bl, textRenderer, matrices, itemRenderer, z)
+		val isFull = occupancy >= 64
+		var slotCount = 0
+		for (row in 0 until maxRow) {
+			for (col in 0 until maxColumn) {
+				val endX = startX + col * WIDTH_PER_COLUMN + 1
+				val endY = startY + row * HEIGHT_PER_ROW + 1
+				drawSlot(endX, endY, slotCount++, isFull, textRenderer, matrices, itemRenderer, z)
 			}
 		}
-		drawOutline(x, y, i, j, matrices, z)
+		drawOutline(startX, startY, maxColumn, maxRow, matrices, z)
 	}
 	
 	private fun drawSlot(

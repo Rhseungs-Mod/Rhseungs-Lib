@@ -1,4 +1,4 @@
-package net.rhseung.rhseungslib.datagen
+package net.rhseung.rhseungslib.datagen.loottable
 
 import net.minecraft.block.Block
 import net.minecraft.data.server.loottable.BlockLootTableGenerator
@@ -19,7 +19,7 @@ import net.minecraft.predicate.NumberRange
 import net.minecraft.predicate.item.EnchantmentPredicate
 import net.minecraft.predicate.item.ItemPredicate
 
-class BlockLootTableManager (
+class BlockLootTableHandler (
 	val modId: String,
 	val lootTableGenerator: BlockLootTableGenerator
 ) {

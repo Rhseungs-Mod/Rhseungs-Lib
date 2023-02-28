@@ -1,4 +1,4 @@
-package net.rhseung.rhseungslib.datagen
+package net.rhseung.rhseungslib.datagen.lang
 
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider.TranslationBuilder
 import net.minecraft.block.Block
@@ -9,7 +9,7 @@ import net.rhseung.rhseungslib.registration.RegistryHelper
 import net.rhseung.rhseungslib.things.BasicBlock
 import net.rhseung.rhseungslib.things.BasicItem
 
-class LanguageManager(
+class LanguageHandler(
 	val modId: String,
 	val translationBuilder: TranslationBuilder
 ) {

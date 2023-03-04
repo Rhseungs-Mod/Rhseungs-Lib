@@ -4,36 +4,131 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 
 object Math {
-	fun <T> calculate(vararg numbers: T, operation: (a: T, b: T) -> T): T {
+	fun <T> calculate(
+		vararg numbers: T,
+		operation: (a: T, b: T) -> T,
+	): T {
 		return numbers.reduce { acc, t -> operation(acc, t) }
 	}
 	
-	fun sumOf(start: Int, end: Int, operation: (k: Int) -> Double): Double {
+	fun sumOfInt(
+		range: IntRange,
+		operation: (k: Int) -> Int,
+	): Int {
+		var ret = 0
+		for (i in range) ret += operation(i)
+		return ret
+	}
+	
+	fun sumOfFloat(
+		range: IntRange,
+		operation: (k: Int) -> Float,
+	): Float {
+		var ret = 0F
+		for (i in range) ret += operation(i)
+		return ret
+	}
+	
+	fun sumOfDouble(
+		range: IntRange,
+		operation: (k: Int) -> Double,
+	): Double {
 		var ret = 0.0
-		for (i in start..end) ret += operation(i)
+		for (i in range) ret += operation(i)
 		return ret
 	}
 	
-	fun sumOf(start: Int, end: Int, operation: (k: Int, n: Int) -> Double): Double {
+	fun sumOfInt(
+		range: IntRange,
+		operation: (k: Int, n: Int) -> Int,
+	): Int {
+		var ret = 0
+		for (i in range) ret += operation(i, range.last)
+		return ret
+	}
+	
+	fun sumOfFloat(
+		range: IntRange,
+		operation: (k: Int, n: Int) -> Float,
+	): Float {
+		var ret = 0F
+		for (i in range) ret += operation(i, range.last)
+		return ret
+	}
+	
+	fun sumOfDouble(
+		range: IntRange,
+		operation: (k: Int, n: Int) -> Double,
+	): Double {
 		var ret = 0.0
-		for (i in start..end) ret += operation(i, end)
+		for (i in range) ret += operation(i, range.last)
 		return ret
 	}
 	
-	fun produceOf(start: Int, end: Int, operation: (k: Int) -> Int): Int {
+	fun produceOfInt(
+		range: IntRange,
+		operation: (k: Int) -> Int,
+	): Int {
 		var ret = 1
-		for (i in start..end) ret *= operation(i)
+		for (i in range) ret *= operation(i)
 		return ret
 	}
 	
-	fun produceOf(start: Int, end: Int, operation: (k: Int, n: Int) -> Int): Int {
+	fun produceOfFloat(
+		range: IntRange,
+		operation: (k: Int) -> Float,
+	): Float {
+		var ret = 1F
+		for (i in range) ret *= operation(i)
+		return ret
+	}
+	
+	fun produceOfDouble(
+		range: IntRange,
+		operation: (k: Int) -> Double,
+	): Double {
+		var ret = 1.0
+		for (i in range) ret *= operation(i)
+		return ret
+	}
+	
+	fun produceOfInt(
+		range: IntRange,
+		operation: (k: Int, n: Int) -> Int,
+	): Int {
 		var ret = 1
-		for (i in start..end) ret *= operation(i, end)
+		for (i in range) ret *= operation(i, range.last)
 		return ret
 	}
 	
-	fun Int.pow(power: Int): Double {
-		return this.toDouble().pow(power)
+	fun produceOfFloat(
+		range: IntRange,
+		operation: (k: Int, n: Int) -> Float,
+	): Float {
+		var ret = 1F
+		for (i in range) ret *= operation(i, range.last)
+		return ret
+	}
+	
+	fun produceOfDouble(
+		range: IntRange,
+		operation: (k: Int, n: Int) -> Double,
+	): Double {
+		var ret = 1.0
+		for (i in range) ret *= operation(i, range.last)
+		return ret
+	}
+	
+	fun Int.pow(n: Int): Int {
+		if (n < 0) return 0
+		
+		var acc = 1
+		var power = n
+		while (power-- != 0) {
+			acc *= this
+		}
+		
+		return acc
 	}
 	
 	fun Int.root(n: Int): Double {
@@ -54,31 +149,40 @@ object Math {
 	 * k = 0  -> geometricMean
 	 * k = -1 -> harmonicMean
 	 */
-	fun mean(vararg numbers: Int, k: Int = 1): Double {
+	fun mean(
+		vararg numbers: Int,
+		k: Int = 1,
+	): Double {
 		check(numbers.isNotEmpty())
 		
 		if (k == 0) return geometricMean(*numbers)
 		
 		val n = numbers.count()
-		return k.root((1.0 / n) * sumOf(0, n - 1) { i -> numbers[i].pow(k) })
+		return k.root((1.0 / n) * sumOfDouble(0 until n) { i -> numbers[i].pow(k).toDouble() })
 	}
 	
-	fun mean(vararg numbers: Float, k: Int = 1): Double {
+	fun mean(
+		vararg numbers: Float,
+		k: Int = 1,
+	): Double {
 		check(numbers.isNotEmpty())
 		
 		if (k == 0) return geometricMean(*numbers)
 		
 		val n = numbers.count()
-		return k.root((1.0 / n) * sumOf(0, n - 1) { i -> numbers[i].pow(k).toDouble() })
+		return k.root((1.0 / n) * sumOfDouble(0 until n) { i -> numbers[i].pow(k).toDouble() })
 	}
 	
-	fun mean(vararg numbers: Double, k: Int = 1): Double {
+	fun mean(
+		vararg numbers: Double,
+		k: Int = 1,
+	): Double {
 		check(numbers.isNotEmpty())
 		
 		if (k == 0) return geometricMean(*numbers)
 		
 		val n = numbers.count()
-		return k.root((1.0 / n) * sumOf(0, n - 1) { i -> numbers[i].pow(k) })
+		return k.root((1.0 / n) * sumOfDouble(0 until n) { i -> numbers[i].pow(k) })
 	}
 	
 	fun quadraticMean(vararg numbers: Int): Double {
@@ -140,6 +244,20 @@ object Math {
 	fun harmonicMean(vararg numbers: Double): Double {
 		return mean(*numbers, k = -1)
 	}
+	
+	fun Float.isPotentialInt(): Boolean {
+		return this.toInt().toFloat() == this
+	}
+	
+	fun Double.isPotentialInt(): Boolean {
+		return this.toInt().toDouble() == this
+	}
+	
+	fun floor(n: Float): Int = n.toInt()
+	fun floor(n: Double): Int = n.toInt()
+	
+	fun ceil(n: Float) = if (n.isPotentialInt()) n.toInt() else floor(n) + 1
+	fun ceil(n: Double) = if (n.isPotentialInt()) n.toInt() else floor(n) + 1
 	
 	fun Float.roundTo(n: Int = 0): Float {
 		check(n >= 0)

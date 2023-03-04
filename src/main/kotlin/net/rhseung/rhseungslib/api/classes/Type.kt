@@ -1,8 +1,8 @@
 package net.rhseung.rhseungslib.api.classes
 
-import net.rhseung.rhseungslib.api.Utils.createInstance
 import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
+import kotlin.reflect.full.primaryConstructor
 
 class Type<T: Any> constructor(
 	val type: KClass<out T>
@@ -14,5 +14,13 @@ class Type<T: Any> constructor(
 	
 	fun call(vararg parameters: Any?): T {
 		return type.createInstance(*parameters)
+	}
+	
+	companion object {
+		fun <T: Any> KClass<T>.createInstance(vararg parameters: Any?): T {
+			return this.primaryConstructor?.call(*parameters) ?: error("$this primary constructor is null")
+		}
+		
+		fun <T: Any> KClass<T>.name() = this.java.simpleName
 	}
 }

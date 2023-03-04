@@ -16,6 +16,7 @@ class ItemModelHandler (
 	val modelGenerator: ItemModelGenerator
 ) {
 	object Parents {
+		val EMPTY = minecraftID("item/")
 		val GENERATED = minecraftID("item/generated")
 		val HANDHELD = minecraftID("item/handheld")
 		val HANDHELD_ROD = minecraftID("item/handheld_rod")
@@ -26,31 +27,31 @@ class ItemModelHandler (
 	}
 	
 	private fun BiConsumer<Identifier, Supplier<JsonElement>>.upload(builder: ItemModelBuilder): Identifier {
-		this.accept(builder.id, Supplier {
+		this.accept(builder.model.id, Supplier {
 			val jsonObject = JsonObject()
 			
-			jsonObject.addProperty("parent", builder.parent.toString())
+			jsonObject.addProperty("parent", builder.model.parent.toString())
 			
-			if (builder.textures.isNotEmpty()) {
+			if (builder.model.textures.isNotEmpty()) {
 				val textureJsonObject = JsonObject()
-				builder.textures.forEach { (textureKey: String, textureId: Identifier) ->
-					textureJsonObject.addProperty(textureKey, textureId.toString())
+				builder.model.textures.forEach { (textureKey: String, textureValue: String) ->
+					textureJsonObject.addProperty(textureKey, textureValue)
 				}
 				jsonObject.add("textures", textureJsonObject)
 			}
 			
 			if (builder.overrides.isNotEmpty()) {
 				val overrideJsonArray = JsonArray()
-				builder.overrides.forEach { overrideBuilder ->
+				builder.overrides.forEach { override ->
 					val eachOverride = JsonObject()
 					
 					val eachPredicate = JsonObject()
-					overrideBuilder.predicates.forEach {
+					override.predicates.forEach {
 						eachPredicate.addProperty(it.key.toString(), it.value)
 					}
 					
 					eachOverride.add("predicate", eachPredicate)
-					eachOverride.addProperty("model", overrideBuilder.model.toString())
+					eachOverride.addProperty("model", override.model.toString())
 					
 					overrideJsonArray.add(eachOverride)
 				}
@@ -60,7 +61,7 @@ class ItemModelHandler (
 			jsonObject
 		})
 		
-		return builder.id
+		return builder.model.id
 	}
 	
 	fun generate(builder: ItemModelBuilder) {
@@ -68,120 +69,18 @@ class ItemModelHandler (
 		
 		modelCollector.upload(builder)
 		builder.overrides.forEach { override ->
-			modelCollector.upload(
-				ItemModelBuilder(override.model)
-					.setParent(builder.parent)
-					.setTexture(override.textures)
-			)
-		}
-	}
-	
-	class ItemModelBuilder constructor(val id: Identifier) {
-		var parent = Parents.GENERATED
-		var textures = mutableMapOf<String, Identifier>()
-		var overrides = mutableListOf<OverrideBuilder>()
-		
-		fun setParent(parent: Identifier): ItemModelBuilder {
-			this.parent = parent
-			return this
-		}
-		
-		fun setTexture(textures: MutableMap<String, Identifier>): ItemModelBuilder {
-			this.textures = textures
-			return this
-		}
-		
-		fun addTexture(
-			name: String,
-			texture: String,
-			prefix: String = "item/",
-			postfix: String = "",
-		): ItemModelBuilder {
-			this.textures[name] = Identifier(id.namespace, "$prefix$texture$postfix")
-			return this
-		}
-		
-		fun addTexture(
-			texture: String,
-			prefix: String = "item/",
-			postfix: String = "",
-		): ItemModelBuilder {
-			this.textures["layer${this.textures.count()}"] = Identifier(id.namespace, "$prefix$texture$postfix")
-			return this
-		}
-		
-		fun <T : Any> addTextures(
-			values: Collection<T>,
-			prefix: String = "item/",
-			postfix: String = "",
-			action: (T) -> String,
-		): ItemModelBuilder {
-			values.map(action)
-				.forEach { texture ->
-					this.textures["layer${this.textures.count()}"] = Identifier(id.namespace, "$prefix$texture$postfix")
-				}
-			return this
-		}
-		
-		fun addOverride(): OverrideBuilder {
-			return OverrideBuilder(this)
-		}
-		
-		class OverrideBuilder(val itemModelBuilder: ItemModelBuilder) {
-			var model = Identifier(itemModelBuilder.id.namespace, "item/")
-			var predicates = mutableMapOf<Identifier, Number>()
-			var textures = mutableMapOf<String, Identifier>()
-			
-			fun addPredicate(
-				id: Identifier,
-				value: Number,
-			): OverrideBuilder {
-				this.predicates[id] = value
-				return this
-			}
-			
-			fun setModel(
-				model: String,
-				postfix: String = "",
-			): OverrideBuilder {
-				this.model = Identifier(this.model.namespace, model).withPath { it + postfix }
-				return this
-			}
-			
-			fun setModel(
-				model: Identifier,
-				postfix: String = "",
-			): OverrideBuilder {
-				this.model = model.withPath { it + postfix }
-				return this
-			}
-			
-			fun addTexture(
-				texture: String,
-				prefix: String = "item/",
-				postfix: String = "",
-			): OverrideBuilder {
-				this.textures["layer${this.textures.count()}"] = Identifier(this.model.namespace, "$prefix$texture$postfix")
-				return this
-			}
-			
-			fun <T : Any> addTextures(
-				values: Collection<T>,
-				prefix: String = "item/",
-				postfix: String = "",
-				action: (T) -> String,
-			): OverrideBuilder {
-				values.map(action)
-					.forEach { texture ->
-						this.textures["layer${this.textures.count()}"] = Identifier(this.model.namespace, "$prefix$texture$postfix")
+			modelCollector.upload(builder {
+				model {
+					id { override.model.id }
+					parent { override.model.parent }
+					textures {
+						from(override.model.textures) {
+							key { it.key }
+							value { it.value }
+						}
 					}
-				return this
-			}
-			
-			fun end(): ItemModelBuilder {
-				itemModelBuilder.overrides.add(this)
-				return itemModelBuilder
-			}
+				}
+			})
 		}
 	}
 	
@@ -190,10 +89,140 @@ class ItemModelHandler (
 		parent: Identifier = Parents.GENERATED,
 	) {
 		val identifier = RegistryHelper.getId(item)
-		this.generate(
-			ItemModelBuilder(identifier)
-				.setParent(parent)
-				.addTexture(identifier.path, prefix = "")
-		)
+		
+		this.generate(builder {
+			model {
+				id { identifier }
+				parent { parent }
+				textures {
+					texture {
+						value { identifier.path }
+					}
+				}
+			}
+		})
+	}
+	
+	fun builder(lambda: ItemModelBuilder.() -> Unit): ItemModelBuilder {
+		return ItemModelBuilder().apply(lambda)
+	}
+	
+	class ItemModelBuilder {
+		lateinit var model: Model
+		var overrides = mutableListOf<Override>()
+		
+		fun model(lambda: ModelBuilder.() -> Unit): ItemModelBuilder {
+			val model = ModelBuilder().apply(lambda).build()
+			if (model.parent == Parents.EMPTY)
+				model.parent = Parents.GENERATED
+			
+			this.model = model
+			return this
+		}
+		
+		fun overrides(lambda: OverrideListBuilder.() -> Unit): ItemModelBuilder {
+			val overrides = OverrideListBuilder().apply(lambda).build()
+			overrides.forEach {
+				if (it.model.parent == Parents.EMPTY) it.model.parent = model.parent
+			}
+			
+			this.overrides = overrides
+			return this
+		}
+	}
+	
+	data class Model(val id: Identifier, var parent: Identifier, val textures: MutableList<Texture>)
+	class ModelBuilder {
+		lateinit var identifier: Identifier
+		var parent = Parents.EMPTY
+		val textures = mutableListOf<Texture>()
+		
+		fun id(lambda: () -> Identifier): ModelBuilder {
+			this.identifier = lambda()
+			return this
+		}
+		
+		fun parent(lambda: () -> Identifier): ModelBuilder {
+			this.parent = lambda()
+			return this
+		}
+		
+		fun textures(lambda: TextureListBuilder.() -> Unit): ModelBuilder {
+			this.textures.addAll(TextureListBuilder().apply(lambda).build())
+			return this
+		}
+		
+		fun build() = Model(identifier, parent, textures)
+	}
+	
+	data class Texture(var key: String, val value: String)
+	class TextureBuilder {
+		var key: String = ""
+		var value: String = ""
+		
+		fun key(lambda: () -> String): TextureBuilder {
+			this.key = lambda()
+			return this
+		}
+		
+		fun value(lambda: () -> String): TextureBuilder {
+			this.value = lambda()
+			return this
+		}
+		
+		fun build() = Texture(key, value)
+	}
+	class TextureListBuilder {
+		private val textureList = mutableListOf<Texture>()
+		
+		fun texture(lambda: TextureBuilder.() -> Unit): TextureListBuilder {
+			val texture = TextureBuilder().apply(lambda).build()
+			if (texture.key.isBlank())
+				texture.key = "layer${textureList.count()}"
+			
+			textureList.add(texture)
+			return this
+		}
+		
+		fun <T : Any> from(collection: Collection<T>, lambda: TextureBuilder.(it: T) -> Unit): TextureListBuilder {
+			collection.forEach {
+				val texture = TextureBuilder().apply { lambda(it) }.build()
+				if (texture.key.isBlank())
+					texture.key = "layer${textureList.count()}"
+				
+				textureList.add(texture)
+			}
+			return this
+		}
+		
+		fun build() = textureList
+	}
+	
+	data class Override(val predicates: MutableMap<Identifier, Number>, val model: Model)
+	class OverrideBuilder {
+		var predicates = mutableMapOf<Identifier, Number>()
+		lateinit var model: Model
+		
+		fun predicate(lambda: () -> Pair<Identifier, Number>): OverrideBuilder {
+			this.predicates[lambda().first] = lambda().second
+			return this
+		}
+		
+		fun model(lambda: ModelBuilder.() -> Unit): OverrideBuilder {
+			this.model = ModelBuilder().apply(lambda).build()
+			return this
+		}
+		
+		fun build() = Override(predicates, model)
+	}
+	class OverrideListBuilder {
+		private val overrideList = mutableListOf<Override>()
+		
+		fun override(lambda: OverrideBuilder.() -> Unit): OverrideListBuilder {
+			overrideList.add(OverrideBuilder().apply(lambda).build())
+			return this
+		}
+		
+		fun build() = overrideList
 	}
 }

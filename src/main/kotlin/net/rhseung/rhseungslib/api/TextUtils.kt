@@ -2,15 +2,13 @@ package net.rhseung.rhseungslib.api
 
 import net.minecraft.text.MutableText
 import net.minecraft.text.Text
-import net.minecraft.util.Identifier
-import net.rhseung.rhseungslib.Mod
 import net.rhseung.rhseungslib.api.classes.Color
 
-object Text {
+object TextUtils {
 	fun String.toPathName() = this.lowercase().replace(" ", "_")
 	
 	fun String.toDisplayName() = this.lowercase().split("/").reversed().map { it.split("_") }.flatten()
-		.joinToString(" ") { it.replaceFirstChar { it.titlecase() } }
+		.joinToString(" ") { str -> str.replaceFirstChar { it.titlecase() } }
 	
 	fun Double.toText(): Text {
 		return Text.literal(
@@ -61,5 +59,10 @@ object Text {
 		}
 		
 		return ret
+	}
+	
+	fun String.toText(vararg formattingColors: Color): Text {
+		return if (formattingColors.isEmpty()) Text.literal(this)
+		else this.coloring(*formattingColors)
 	}
 }

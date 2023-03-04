@@ -12,10 +12,8 @@ import net.minecraft.recipe.Ingredient
 import net.minecraft.recipe.RecipeSerializer
 import net.minecraft.recipe.book.RecipeCategory
 import net.minecraft.registry.tag.TagKey
-import net.minecraft.resource.featuretoggle.ToggleableFeature
 import net.minecraft.util.Identifier
-import net.rhseung.rhseungslib.api.Utils.forBoth
-import java.util.Objects
+import net.rhseung.rhseungslib.api.collection.CollectionUtils.forBoth
 import java.util.function.Consumer
 
 class RecipeHandler(

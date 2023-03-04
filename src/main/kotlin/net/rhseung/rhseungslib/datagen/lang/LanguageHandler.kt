@@ -4,7 +4,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider.Transl
 import net.minecraft.block.Block
 import net.minecraft.item.Item
 import net.minecraft.item.ItemGroup
-import net.rhseung.rhseungslib.api.Text.toDisplayName
+import net.rhseung.rhseungslib.api.TextUtils.toDisplayName
 import net.rhseung.rhseungslib.registration.RegistryHelper
 import net.rhseung.rhseungslib.things.BasicBlock
 import net.rhseung.rhseungslib.things.BasicItem

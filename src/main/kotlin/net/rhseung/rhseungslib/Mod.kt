@@ -6,10 +6,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 object Mod : ModInitializer {
-	const val MOD_ID = "rhseungslib"
-	val LOGGER: Logger = LoggerFactory.getLogger(MOD_ID)
+	private const val MODID = "rhseungslib"
+	val LOGGER: Logger = LoggerFactory.getLogger(MODID)
 	
-	fun modID(path: String) = Identifier(MOD_ID, path)
+	fun modID(path: String) = Identifier(MODID, path)
 	fun minecraftID(path: String) = Identifier("minecraft", path)
 	
 	override fun onInitialize() {}

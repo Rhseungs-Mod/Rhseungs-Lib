@@ -47,6 +47,9 @@ abstract class AdaptiveTooltipComponent(
 		return this::class.primaryConstructor!!.call(data, screen)
 	}
 	
+	// todo: more icons
+	//  - `when in main hand` icon
+	//  - `when in sub hand` icon
 	enum class Icon(private val variants: Int = 1) {
 		ATTACK_DAMAGE,
 		ATTACK_SPEED,

@@ -17,67 +17,74 @@ import java.util.function.ToIntFunction
 
 class BasicBlock private constructor(
 	val id: Identifier,
-	val group: ItemGroup? = null,
-	val settings: FabricBlockSettings,
-) : Block(settings) {
+	private val setting: Settings,
+) : Block(setting.settings) {
 	
 	init {
-		RegistryHelper.register(this, id, group)
+		RegistryHelper.register(this, id, setting.group)
 	}
 	
 	override fun toString(): String {
-		return "BasicBlock(id=$id, group=$group, settings=$settings)"
+		return "BasicBlock(id=$id, settings=$setting)"
 	}
 	
-	class BlockBuilder constructor(
-		val path: String,
-		val group: ItemGroup? = null,
-	) {
-		private lateinit var settings: FabricBlockSettings
+	companion object {
+		fun block(modId: String, lambda: BlockBuilder.() -> Unit) = BlockBuilder(modId).apply(lambda).build()
+	}
+	
+	class BlockBuilder(val modId: String) {
+		var path = ""
+		private lateinit var settings: Settings
 		
-		fun settings(
-			material: Material,
-			collidable: Boolean = true,
-			soundGroup: BlockSoundGroup = BlockSoundGroup.STONE,
-			luminance: ToIntFunction<BlockState> = ToIntFunction { 0 },
-			resistance: Float = 0f,
-			hardness: Float = 0f,
-			toolRequired: Boolean = false,
-			randomTicks: Boolean = false,
-			slipperiness: Float = 0.6f,
-			velocityMultiplier: Float = 1.0f,
-			jumpVelocityMultiplier: Float = 1.0f,
-			lootTableId: Identifier = LootTables.EMPTY,
-			opaque: Boolean = true,
-			isAir: Boolean = false,
-			blockBreakParticles: Boolean = true,
-			allowsSpawningPredicate: TypedContextPredicate<EntityType<*>> = TypedContextPredicate { state, world, pos, type ->
-				state.isSideSolidFullSquare(
-					world,
-					pos,
-					Direction.UP
-				)
-			},
-			solidBlockPredicate: ContextPredicate = ContextPredicate { state, world, pos ->
-				state.material.blocksLight() && state.isFullCube(
-					world,
-					pos
-				)
-			},
-			postProcessPredicate: ContextPredicate = ContextPredicate { state, world, pos -> false },
-			emissiveLightingPredicate: ContextPredicate = ContextPredicate { state, world, pos -> false },
-			dynamicBounds: Boolean = false,
-			offsetType: Function<BlockState, OffsetType> = Function<BlockState, OffsetType> { state -> OffsetType.NONE },
-			vararg requireFeatures: FeatureFlag,
-		): BlockBuilder {
-			this.settings = FabricBlockSettings.of(material).collidable(collidable).sounds(soundGroup)
+		fun settings(lambda: SettingsBuilder.() -> Unit): BlockBuilder {
+			this.settings = SettingsBuilder().apply(lambda).build()
+			return this
+		}
+		
+		fun build() = BasicBlock(Identifier(modId, path), settings)
+	}
+	
+	class SettingsBuilder {
+		var group: ItemGroup? = null
+		private lateinit var material: Material
+		var collidable: Boolean = true
+		var soundGroup: BlockSoundGroup = BlockSoundGroup.STONE
+		var luminance: ToIntFunction<BlockState> = ToIntFunction { 0 }
+		var resistance: Float = 0f
+		var hardness: Float = 0f
+		var toolRequired: Boolean = false
+		var randomTicks: Boolean = false
+		var slipperiness: Float = 0.6f
+		var velocityMultiplier: Float = 1.0f
+		var jumpVelocityMultiplier: Float = 1.0f
+		var lootTableId: Identifier = LootTables.EMPTY
+		var opaque: Boolean = true
+		var isAir: Boolean = false
+		var blockBreakParticles: Boolean = true
+		var allowsSpawningPredicate: TypedContextPredicate<EntityType<*>> = TypedContextPredicate { state, world, pos, type -> state.isSideSolidFullSquare(world, pos, Direction.UP) }
+		var solidBlockPredicate: ContextPredicate = ContextPredicate { state, world, pos -> state.material.blocksLight() && state.isFullCube(world, pos) }
+		var postProcessPredicate: ContextPredicate = ContextPredicate { state, world, pos -> false }
+		var emissiveLightingPredicate: ContextPredicate = ContextPredicate { state, world, pos -> false }
+		var dynamicBounds: Boolean = false
+		var offsetType: Function<BlockState, OffsetType> = Function<BlockState, OffsetType> { state -> OffsetType.NONE }
+		var requireFeatures: Array<out FeatureFlag> = arrayOf()
+		
+		fun build(): Settings {
+			var settings = Settings(material).settings
+				.collidable(collidable)
+				.sounds(soundGroup)
 				.luminance(luminance)
-				.resistance(resistance).hardness(hardness)
-				.slipperiness(slipperiness).velocityMultiplier(velocityMultiplier)
-				.jumpVelocityMultiplier(jumpVelocityMultiplier).drops(lootTableId)
+				.resistance(resistance)
+				.hardness(hardness)
+				.slipperiness(slipperiness)
+				.velocityMultiplier(velocityMultiplier)
+				.jumpVelocityMultiplier(jumpVelocityMultiplier)
+				.drops(lootTableId)
 				.allowsSpawning(allowsSpawningPredicate)
-				.solidBlock(solidBlockPredicate).postProcess(postProcessPredicate)
-				.emissiveLighting(emissiveLightingPredicate).offsetType(offsetType)
+				.solidBlock(solidBlockPredicate)
+				.postProcess(postProcessPredicate)
+				.emissiveLighting(emissiveLightingPredicate)
+				.offsetType(offsetType)
 			
 			if (dynamicBounds) settings = settings.dynamicBounds()
 			if (requireFeatures.isNotEmpty()) settings = settings.requires(*requireFeatures)
@@ -87,13 +94,9 @@ class BasicBlock private constructor(
 			if (toolRequired) settings = settings.requiresTool()
 			if (randomTicks) settings = settings.ticksRandomly()
 			
-			return this
-		}
-		
-		fun of(
-			modId: String
-		): BasicBlock {
-			return BasicBlock(Identifier(modId, path), group, settings)
+			return Settings(material, settings, group)
 		}
 	}
+	
+	data class Settings(val material: Material, val settings: FabricBlockSettings = FabricBlockSettings.of(material), val group: ItemGroup? = null)
 }

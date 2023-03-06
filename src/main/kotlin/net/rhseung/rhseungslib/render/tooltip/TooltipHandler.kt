@@ -1,24 +1,29 @@
 package net.rhseung.rhseungslib.render.tooltip
 
 import com.mojang.blaze3d.systems.RenderSystem
+import net.minecraft.block.FurnaceBlock
 import net.minecraft.client.font.TextRenderer
 import net.minecraft.client.gui.DrawableHelper
 import net.minecraft.client.gui.screen.Screen
+import net.minecraft.client.gui.screen.ingame.EnchantmentScreen
 import net.minecraft.client.render.item.ItemRenderer
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.text.Text
+import net.rhseung.rhseungslib.api.TextUtils.toText
+import net.rhseung.rhseungslib.api.classes.Color
 import net.rhseung.rhseungslib.api.collection.PixelSize
 import net.rhseung.rhseungslib.api.math.Math.ceil
 import net.rhseung.rhseungslib.api.math.Math.floor
 import net.rhseung.rhseungslib.api.math.Point3D
 import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent
+import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent.Icon
 import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent.Icon.Companion.ICON_SIZE
 
 class TooltipHandler(
-	val tooltipLines: Map<(Screen?) -> Boolean, List<Line>>,
+	private val tooltipLines: Map<(Screen?) -> Boolean, List<Line>>,
 ) {
 	fun height(screen: Screen?): Int {
-		val lines = tooltipLines[tooltipLines.filter { it.key(screen) }.keys.filter { it(screen) }.first()]
+		val lines = tooltipLines[tooltipLines.filter { it.key(screen) }.keys.first { it(screen) }]
 		
 		return if (lines != null) (lines.count()) * (CONTENT.height + SPACE.height) - SPACE.height else 0
 	}
@@ -52,7 +57,7 @@ class TooltipHandler(
 							DrawableHelper.drawTexture(
 								matrices,
 								pos.x,
-								pos.y,
+								pos.y - 1,
 								pos.z,
 								element.icon.u(ratio).toFloat(),
 								element.icon.v(ratio).toFloat(),
@@ -73,7 +78,7 @@ class TooltipHandler(
 							textRenderer,
 							element.text,
 							pos.x,
-							pos.y + 1,
+							pos.y,
 							0xFFFFFF
 						)
 						matrices.translate(0.0, 0.0, -400.0)
@@ -95,12 +100,34 @@ class TooltipHandler(
 		val SPACE = PixelSize(3, 2)
 		val TAB = PixelSize(8, 4)
 		
+		/**
+		 * Tooltip Using Example
+		 * ```
+		 * val tooltip = tooltip {
+		 * 	now({ it is EnchantmentScreen }) {
+		 * 		line {
+		 * 			addText { "Toughness: ".toText() }
+		 * 			addIcons(data.toughness) { Icon.TOUGHNESS }
+		 * 			blank { TAB }
+		 * 			addIcon { Icon.DURABILITY }
+		 * 			space {}
+		 * 			addText { "{${data.currentDurability}}{/${data.maxDurability}}".toText(Color.WHITE, Color.GRAY) }
+		 * 		}
+		 * 		endl {  }
+		 * 		line({ Screen.hasShiftDown() }) {
+		 * 			addIcon { Icon.ENCHANTED }
+		 * 			space {}
+		 * 			addText { "${data.enchantability}".toText() }
+		 * 		}
+		 *     }
+		 * }
+		 */
 		fun tooltip(lambda: TooltipBuilder.() -> Unit): TooltipHandler {
 			return TooltipBuilder().apply(lambda).build()
 		}
 		
 		class TooltipBuilder {
-			val tooltips = mutableMapOf<(Screen?) -> Boolean, List<Line>>()
+			private val tooltips = mutableMapOf<(Screen?) -> Boolean, List<Line>>()
 			
 			fun now(
 				condition: (Screen?) -> Boolean,
@@ -114,7 +141,7 @@ class TooltipHandler(
 		}
 		
 		class NowBuilder {
-			val lines = mutableListOf<Line>()
+			private val lines = mutableListOf<Line>()
 			
 			fun line(lambda: LineBuilder.() -> Unit): NowBuilder {
 				lines.add(LineBuilder().apply(lambda).build())
@@ -141,16 +168,16 @@ class TooltipHandler(
 		}
 		
 		class LineBuilder {
-			val elements = mutableListOf<Element>()
+			private val elements = mutableListOf<Element>()
 			
-			fun addIcon(lambda: () -> AdaptiveTooltipComponent.Icon): LineBuilder {
+			fun addIcon(lambda: () -> Icon): LineBuilder {
 				elements.add(IconElement(lambda()))
 				return this
 			}
 			
 			fun addIcons(
 				count: Double,
-				lambda: () -> AdaptiveTooltipComponent.Icon,
+				lambda: () -> Icon,
 			): LineBuilder {
 				elements.add(IconElement(lambda(), count))
 				return this
@@ -158,7 +185,7 @@ class TooltipHandler(
 			
 			fun addIcons(
 				count: Int,
-				lambda: () -> AdaptiveTooltipComponent.Icon,
+				lambda: () -> Icon,
 			): LineBuilder {
 				elements.add(IconElement(lambda(), count.toDouble()))
 				return this
@@ -182,10 +209,7 @@ class TooltipHandler(
 			fun build() = Line(elements)
 		}
 		
-		open class Line(
-			open val elements: MutableList<Element>,
-			open var condition: () -> Boolean = { true },
-		) {
+		open class Line(open val elements: MutableList<Element>, open var condition: () -> Boolean = { true }) {
 			fun width(textRenderer: TextRenderer): Int {
 				return elements.sumOf { it.width(textRenderer) }
 			}
@@ -195,10 +219,7 @@ class TooltipHandler(
 			open fun width(textRenderer: TextRenderer): Int = 0
 		}
 		
-		data class IconElement(
-			val icon: AdaptiveTooltipComponent.Icon,
-			val count: Double = 1.0,
-		) : Element() {
+		data class IconElement(val icon: Icon, val count: Double = 1.0) : Element() {
 			override fun width(textRenderer: TextRenderer): Int {
 				return ICON_SIZE.width * ceil(count)
 			}

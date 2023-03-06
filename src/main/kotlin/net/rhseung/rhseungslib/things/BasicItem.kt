@@ -9,44 +9,55 @@ import net.rhseung.rhseungslib.registration.RegistryHelper
 
 class BasicItem private constructor(
 	val id: Identifier,
-	val group: ItemGroup? = null,
-	val settings: Settings,
-) : Item(settings) {
+	private val setting: Settings,
+) : Item(setting.settings) {
 	
 	init {
-		RegistryHelper.register(this, id, group)
+		RegistryHelper.register(this, id, setting.group)
 	}
 	
 	override fun toString(): String {
-		return "BasicItem(id=$id, group=$group, settings=$settings)"
+		return "BasicItem(id=$id, settings=$setting)"
 	}
 	
-	class ItemBuilder constructor(
-		val path: String,
-		val group: ItemGroup? = null,
-	) {
-		private var settings: Settings = Settings()
+	companion object {
+		fun item(modId: String, lambda: ItemBuilder.() -> Unit) = ItemBuilder(modId).apply(lambda).build()
+	}
+	
+	class ItemBuilder(val modId: String) {
+		var path = ""
+		private var settings = Settings()
 		
-		fun settings(
-			maxCount: Int = 64,
-			maxDamage: Int = 0,
-			recipeRemainder: Item? = null,
-			rarity: Rarity = Rarity.COMMON,
-			fireproof: Boolean = false,
-			vararg requireFeatures: FeatureFlag
-		): ItemBuilder {
-			this.settings =
-				settings.maxCount(maxCount).maxDamage(maxDamage).recipeRemainder(recipeRemainder).rarity(rarity)
-			if (requireFeatures.isNotEmpty()) this.settings = settings.requires(*requireFeatures)
-			if (fireproof) this.settings = settings.fireproof()
-			
+		fun settings(lambda: SettingsBuilder.() -> Unit): ItemBuilder {
+			this.settings = SettingsBuilder().apply(lambda).build()
 			return this
 		}
 		
-		fun of(
-			modId: String
-		): BasicItem {
-			return BasicItem(Identifier(modId, path), group, settings)
+		fun build() = BasicItem(Identifier(modId, path), settings)
+	}
+	
+	class SettingsBuilder {
+		var group: ItemGroup? = null
+		var maxCount: Int = 64
+		var maxDamage: Int = 0
+		var recipeRemainder: Item? = null
+		var rarity: Rarity = Rarity.COMMON
+		var fireproof: Boolean = false
+		var requireFeatures: Array<out FeatureFlag> = arrayOf()
+		
+		fun build(): Settings {
+			var settings = Settings().settings
+				.maxCount(maxCount)
+				.maxDamage(maxDamage)
+				.recipeRemainder(recipeRemainder)
+				.rarity(rarity)
+			
+			if (requireFeatures.isNotEmpty()) settings = settings.requires(*requireFeatures)
+			if (fireproof) settings = settings.fireproof()
+			
+			return Settings(settings, group)
 		}
 	}
+	
+	data class Settings(val settings: Item.Settings = Item.Settings(), val group: ItemGroup? = null)
 }

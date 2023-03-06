@@ -35,8 +35,8 @@ class BundleTooltipComponent constructor(
 	
 	override fun drawItems(
 		textRenderer: TextRenderer,
-		startX: Int,
-		startY: Int,
+		x: Int,
+		y: Int,
 		matrices: MatrixStack,
 		itemRenderer: ItemRenderer,
 		z: Int,
@@ -48,12 +48,12 @@ class BundleTooltipComponent constructor(
 		var slotCount = 0
 		for (row in 0 until maxRow) {
 			for (col in 0 until maxColumn) {
-				val endX = startX + col * WIDTH_PER_COLUMN + 1
-				val endY = startY + row * HEIGHT_PER_ROW + 1
+				val endX = x + col * WIDTH_PER_COLUMN + 1
+				val endY = y + row * HEIGHT_PER_ROW + 1
 				drawSlot(endX, endY, slotCount++, isFull, textRenderer, matrices, itemRenderer, z)
 			}
 		}
-		drawOutline(startX, startY, maxColumn, maxRow, matrices, z)
+		drawOutline(x, y, maxColumn, maxRow, matrices, z)
 	}
 	
 	private fun drawSlot(

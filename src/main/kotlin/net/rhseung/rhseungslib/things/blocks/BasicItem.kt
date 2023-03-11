@@ -1,4 +1,4 @@
-package net.rhseung.rhseungslib.things
+package net.rhseung.rhseungslib.things.blocks
 
 import net.minecraft.item.Item
 import net.minecraft.item.ItemGroup

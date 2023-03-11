@@ -2,10 +2,9 @@ package net.rhseung.rhseungslib.datagen.lang
 
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider
-import net.minecraft.item.ItemGroups
 import net.rhseung.rhseungslib.registration.RegistryHelper
-import net.rhseung.rhseungslib.things.BasicBlock
-import net.rhseung.rhseungslib.things.BasicItem
+import net.rhseung.rhseungslib.things.blocks.BasicBlock
+import net.rhseung.rhseungslib.things.blocks.BasicItem
 
 abstract class AbstractLanguageProvider (
 	val output: FabricDataOutput,

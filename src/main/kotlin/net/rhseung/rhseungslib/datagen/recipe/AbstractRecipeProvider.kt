@@ -16,11 +16,8 @@ abstract class AbstractRecipeProvider (
 	override fun generate(exporter: Consumer<RecipeJsonProvider>) {
 		val handler = RecipeHandler(output.modId, exporter)
 		register(handler)
-		
-		offerPlanksRecipe(exporter, Items.OAK_PLANKS, ItemTags.PLANKS, 4)
 	}
 	
 	open fun register(handler: RecipeHandler) {
-	
 	}
 }

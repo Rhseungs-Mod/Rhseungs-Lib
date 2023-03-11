@@ -1,42 +1,66 @@
 package net.rhseung.rhseungslib.render.tooltip
 
 import com.mojang.blaze3d.systems.RenderSystem
-import net.minecraft.block.FurnaceBlock
+import net.minecraft.client.gui.tooltip.TooltipComponent
 import net.minecraft.client.font.TextRenderer
 import net.minecraft.client.gui.DrawableHelper
 import net.minecraft.client.gui.screen.Screen
-import net.minecraft.client.gui.screen.ingame.EnchantmentScreen
 import net.minecraft.client.render.item.ItemRenderer
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.text.Text
 import net.rhseung.rhseungslib.api.TextUtils.toText
-import net.rhseung.rhseungslib.api.classes.Color
+import net.rhseung.rhseungslib.api.classes.Type
+import net.rhseung.rhseungslib.api.collection.InstancePair
 import net.rhseung.rhseungslib.api.collection.PixelSize
+import net.rhseung.rhseungslib.api.collection.PixelSize.Companion.CONTENT
+import net.rhseung.rhseungslib.api.collection.PixelSize.Companion.SPACE
 import net.rhseung.rhseungslib.api.math.Math.ceil
 import net.rhseung.rhseungslib.api.math.Math.floor
 import net.rhseung.rhseungslib.api.math.Point3D
-import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent
-import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent.Icon
-import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent.Icon.Companion.ICON_SIZE
+import net.rhseung.rhseungslib.render.tooltip.component.AbstractTooltipComponent.Icon
+import net.rhseung.rhseungslib.render.tooltip.component.AbstractTooltipComponent.Icon.Companion.ICON_SIZE
+import kotlin.reflect.KClass
 
 class TooltipHandler(
-	private val tooltipLines: Map<(Screen?) -> Boolean, List<Line>>,
+	private val tooltipLines: List<InstancePair<Screen, List<Line>>>,
 ) {
-	fun height(screen: Screen?): Int {
-		val lines = tooltipLines[tooltipLines.filter { it.key(screen) }.keys.first { it(screen) }]
+	/**
+	 * set tooltip component height using [TooltipBuilder]
+	 *
+	 * @param screen screen that tooltip component showed in
+	 */
+	fun getHeight(
+		screen: Screen?
+	): Int {
+		val lines = tooltipLines.find { it.first.isInstance(screen) }?.second
 		
 		return if (lines != null) (lines.count()) * (CONTENT.height + SPACE.height) - SPACE.height else 0
 	}
 	
-	fun width(
+	/**
+	 * set tooltip component width using [TooltipBuilder]
+	 * 
+	 * @param textRenderer text renderer from [TooltipComponent.getWidth]
+	 * @param screen screen that tooltip component showed in
+	 */
+	fun getWidth(
 		textRenderer: TextRenderer,
 		screen: Screen?,
 	): Int {
-		val lines = tooltipLines[tooltipLines.filter { it.key(screen) }.keys.filter { it(screen) }.first()]
+		val lines = tooltipLines.find { it.first.isInstance(screen) }?.second
 		
 		return lines?.maxBy { it.width(textRenderer) }?.width(textRenderer) ?: 0
 	}
 	
+	/**
+	 * draw tooltip component using [TooltipBuilder]
+	 * 
+	 * @param textRenderer text renderer from [TooltipComponent.drawText]
+	 * @param itemRenderer item renderer from [TooltipComponent.drawText]
+	 * @param matrices matrix stack from [TooltipComponent.drawText]
+	 * @param initialPos initial position of x, y, z from [TooltipComponent.drawText]
+	 * @param screen screen that tooltip component showed in
+	 */
 	fun draw(
 		textRenderer: TextRenderer,
 		itemRenderer: ItemRenderer,
@@ -46,7 +70,7 @@ class TooltipHandler(
 	) {
 		val pos = initialPos
 		
-		tooltipLines[tooltipLines.filter { it.key(screen) }.keys.first { it(screen) }]?.forEach { line ->
+		val lines = tooltipLines.find { it.first.isInstance(screen) }?.second?.forEach { line ->
 			line.elements.forEach { element ->
 				when (element) {
 					is IconElement  -> {
@@ -96,29 +120,31 @@ class TooltipHandler(
 	}
 	
 	companion object {
-		val CONTENT = PixelSize(0, ICON_SIZE.height)
-		val SPACE = PixelSize(3, 2)
-		val TAB = PixelSize(8, 4)
+		object KEY {
+			val SHIFT = { Screen.hasShiftDown() }
+			val CTRL = { Screen.hasControlDown() }
+			val ALT = { Screen.hasAltDown() }
+		}
 		
 		/**
-		 * Tooltip Using Example
+		 * example code
 		 * ```
 		 * val tooltip = tooltip {
-		 * 	now({ it is EnchantmentScreen }) {
-		 * 		line {
-		 * 			addText { "Toughness: ".toText() }
-		 * 			addIcons(data.toughness) { Icon.TOUGHNESS }
-		 * 			blank { TAB }
-		 * 			addIcon { Icon.DURABILITY }
-		 * 			space {}
-		 * 			addText { "{${data.currentDurability}}{/${data.maxDurability}}".toText(Color.WHITE, Color.GRAY) }
-		 * 		}
-		 * 		endl {  }
-		 * 		line({ Screen.hasShiftDown() }) {
-		 * 			addIcon { Icon.ENCHANTED }
-		 * 			space {}
-		 * 			addText { "${data.enchantability}".toText() }
-		 * 		}
+		 *     which(EnchantmentScreen::class) {
+		 *         line {
+		 * 	        + "Toughness: "
+		 * 			+ Icon.TOUGHNESS(data.toughness)
+		 * 	        + TAB
+		 * 	        + Icon.DURABILITY
+		 * 	        + SPACE
+		 * 	        + "{${data.currentDurability}}{/${data.maxDurability}}".toText(Color.WHITE, Color.GRAY)
+		 *         }
+		 *         line {}
+		 *         line(KEY.SHIFT) {
+		 * 	        + Icon.ENCHANTED
+		 * 	        + SPACE
+		 * 	        + data.enchantability
+		 *         }
 		 *     }
 		 * }
 		 */
@@ -126,89 +152,107 @@ class TooltipHandler(
 			return TooltipBuilder().apply(lambda).build()
 		}
 		
+		/**
+		 * builder for tooltip
+		 */
 		class TooltipBuilder {
-			private val tooltips = mutableMapOf<(Screen?) -> Boolean, List<Line>>()
+			private val tooltips
+				= mutableListOf<InstancePair<Screen, List<Line>>>()
 			
-			fun now(
-				condition: (Screen?) -> Boolean,
-				lambda: NowBuilder.() -> Unit,
+			/**
+			 * To always be displayed regardless of the [screen], [screen] will be `Screen::class`
+			 *
+			 * @param screen screen that tooltip component showed in
+			 * @param lambda enter [EachTooltipBuilder]
+			 */
+			fun which(
+				screen: KClass<out Screen>,
+				lambda: EachTooltipBuilder.() -> Unit,
 			): TooltipBuilder {
-				tooltips[condition] = NowBuilder().apply(lambda).build()
+				tooltips.add(Type(screen) to EachTooltipBuilder().apply(lambda).build())
 				return this
 			}
 			
 			fun build() = TooltipHandler(tooltips)
 		}
 		
-		class NowBuilder {
+		/**
+		 * builder for each tooltip
+		 */
+		class EachTooltipBuilder {
 			private val lines = mutableListOf<Line>()
 			
-			fun line(lambda: LineBuilder.() -> Unit): NowBuilder {
+			/**
+			 * @param lambda enter [LineBuilder]
+			 */
+			fun line(
+				lambda: LineBuilder.() -> Unit
+			): EachTooltipBuilder {
 				lines.add(LineBuilder().apply(lambda).build())
 				return this
 			}
 			
+			/**
+			 * @param key key press event condition, using [KEY]
+			 * @param lambda enter [LineBuilder]
+			 */
 			fun line(
-				condition: () -> Boolean,
+				key: () -> Boolean,
 				lambda: LineBuilder.() -> Unit,
-			): NowBuilder {
+			): EachTooltipBuilder {
 				val optionalLine = LineBuilder().apply(lambda).build()
-				optionalLine.condition = condition
+				optionalLine.condition = key
 				
 				lines.add(optionalLine)
-				return this
-			}
-			
-			fun endl(lambda: () -> Unit): NowBuilder {
-				lines.add(Line(mutableListOf()))
 				return this
 			}
 			
 			fun build() = lines
 		}
 		
-		class LineBuilder {
-			private val elements = mutableListOf<Element>()
-			
-			fun addIcon(lambda: () -> Icon): LineBuilder {
-				elements.add(IconElement(lambda()))
-				return this
+		class LineBuilder(val elements: MutableList<Element> = mutableListOf()) {
+			operator fun Icon.unaryPlus(): LineBuilder {
+				elements.add(IconElement(this, this.count))
+				return LineBuilder(elements)
 			}
 			
-			fun addIcons(
-				count: Double,
-				lambda: () -> Icon,
-			): LineBuilder {
-				elements.add(IconElement(lambda(), count))
-				return this
+			operator fun Int.unaryPlus(): LineBuilder {
+				elements.add(TextElement(this.toText()))
+				return LineBuilder(elements)
 			}
 			
-			fun addIcons(
-				count: Int,
-				lambda: () -> Icon,
-			): LineBuilder {
-				elements.add(IconElement(lambda(), count.toDouble()))
-				return this
+			operator fun Float.unaryPlus(): LineBuilder {
+				elements.add(TextElement(this.toText()))
+				return LineBuilder(elements)
 			}
 			
-			fun addText(lambda: () -> Text): LineBuilder {
-				elements.add(TextElement(lambda()))
-				return this
+			operator fun Double.unaryPlus(): LineBuilder {
+				elements.add(TextElement(this.toText()))
+				return LineBuilder(elements)
 			}
 			
-			fun blank(lambda: () -> PixelSize<Int>): LineBuilder {
-				elements.add(SpaceElement(lambda().width))
-				return this
+			operator fun String.unaryPlus(): LineBuilder {
+				elements.add(TextElement(this.toText()))
+				return LineBuilder(elements)
 			}
 			
-			fun space(lambda: () -> Unit): LineBuilder {
-				elements.add(SpaceElement(SPACE.width))
-				return this
+			operator fun Text.unaryPlus(): LineBuilder {
+				elements.add(TextElement(this))
+				return LineBuilder(elements)
+			}
+			
+			operator fun PixelSize<Int>.unaryPlus(): LineBuilder {
+				elements.add(SpaceElement(this.width))
+				return LineBuilder(elements)
 			}
 			
 			fun build() = Line(elements)
 		}
 		
+		/**
+		 * @param elements The elements to add to the line.
+		 * @param condition The condition to check.
+		 */
 		open class Line(open val elements: MutableList<Element>, open var condition: () -> Boolean = { true }) {
 			fun width(textRenderer: TextRenderer): Int {
 				return elements.sumOf { it.width(textRenderer) }
@@ -219,18 +263,28 @@ class TooltipHandler(
 			open fun width(textRenderer: TextRenderer): Int = 0
 		}
 		
+		/**
+		 * @param icon The icon to add to the element.
+		 * @param count The number of icons to add.
+		 */
 		data class IconElement(val icon: Icon, val count: Double = 1.0) : Element() {
 			override fun width(textRenderer: TextRenderer): Int {
 				return ICON_SIZE.width * ceil(count)
 			}
 		}
 		
+		/**
+		 * @param text The text to add to the element.
+		 */
 		data class TextElement(val text: Text) : Element() {
 			override fun width(textRenderer: TextRenderer): Int {
 				return textRenderer.getWidth(text)
 			}
 		}
 		
+		/**
+		 * @param gap The gap between the elements.
+		 */
 		class SpaceElement(val gap: Int) : Element() {
 			override fun width(textRenderer: TextRenderer): Int {
 				return SPACE.width

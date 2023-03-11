@@ -24,6 +24,10 @@ object TextUtils {
 		)
 	}
 	
+	fun Int.toText(): Text {
+		return Text.literal(this.toString())
+	}
+	
 	fun coloring(
 		text: String,
 		color: Color,

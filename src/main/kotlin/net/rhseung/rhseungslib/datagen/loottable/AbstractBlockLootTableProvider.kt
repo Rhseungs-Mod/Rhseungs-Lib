@@ -3,7 +3,7 @@ package net.rhseung.rhseungslib.datagen.loottable
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider
 import net.rhseung.rhseungslib.registration.RegistryHelper
-import net.rhseung.rhseungslib.things.BasicBlock
+import net.rhseung.rhseungslib.things.blocks.BasicBlock
 
 abstract class AbstractBlockLootTableProvider (
 	val output: FabricDataOutput

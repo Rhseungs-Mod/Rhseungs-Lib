@@ -11,7 +11,6 @@ import net.minecraft.recipe.CraftingRecipe
 import net.minecraft.recipe.Ingredient
 import net.minecraft.recipe.RecipeSerializer
 import net.minecraft.recipe.book.RecipeCategory
-import net.minecraft.registry.tag.TagKey
 import net.minecraft.util.Identifier
 import net.rhseung.rhseungslib.api.collection.CollectionUtils.forBoth
 import java.util.function.Consumer
@@ -28,34 +27,84 @@ class RecipeHandler(
 	}
 	
 	fun generateShapelessRecipe(
-		category: RecipeCategory = RecipeCategory.MISC,
-	): ShapelessRecipeBuilder {
-		return ShapelessRecipeBuilder().set(category, recipeProvider)
+		builder: ShapelessRecipeBuilder
+	) {
+		shapeless {
+			group { "group" }
+			
+			inputs {
+				input {
+				
+				}
+			}
+			
+			output {
+			}
+		}
+		
+		
+		return builder.build()
+		
+//		category: RecipeCategory = RecipeCategory.MISC,
+
+//		return ShapelessRecipeBuilder().set(category, recipeProvider)
 	}
 	
 	class ShapelessRecipeBuilder {
 		private var ingredients = mutableListOf<Ingredient>()
 		private val criterions = mutableListOf<Pair<String, CriterionConditions>>()
 		private var group: String? = null
-		private var category: RecipeCategory? = null
-		private var recipeProvider: Consumer<RecipeJsonProvider>? = null
+		private var category: RecipeCategory = RecipeCategory.MISC
+		private lateinit var recipeProvider: Consumer<RecipeJsonProvider>
 		
-		fun set(
-			category: RecipeCategory,
-			recipeProvider: Consumer<RecipeJsonProvider>,
+		fun category(
+			category: () -> RecipeCategory
 		): ShapelessRecipeBuilder {
-			this.category = category
-			this.recipeProvider = recipeProvider
+			this.category = category()
+			return this
+		}
+		
+		fun provider(
+			provider: () -> Consumer<RecipeJsonProvider>
+		): ShapelessRecipeBuilder {
+			this.recipeProvider = provider()
 			return this
 		}
 		
 		fun group(
-			group: String?,
+			group: () -> String?,
 		): ShapelessRecipeBuilder {
-			this.group = group
+			this.group = group()
 			return this
 		}
 		
+		fun inputs(
+			lambda: inputListBuilder.() -> Unit
+		): ShapelessRecipeBuilder {
+			this.ingredients.addAll(inputListBuilder.apply(lambda).build())
+			return this
+		}
+		
+		fun output(
+			lambda: outputBuilder.() -> Unit
+		): ShapelessRecipeBuilder {
+		
+		}
+	}
+	
+	class inputListBuilder {
+		private val inputList = mutableListOf<>
+		
+		fun input(
+			lambda: inputBuilder.() -> Unit
+		): inputListBuilder {
+		
+		}
+		
+		fun build() = inputList
+	}
+	
+	class inputBuilder {
 		fun input(
 			vararg input: ItemConvertible,
 		): ShapelessRecipeBuilder {
@@ -92,22 +141,9 @@ class RecipeHandler(
 			ingredients.add(ingredient)
 			return this
 		}
-		
-		fun output(
-			output: ItemConvertible,
-			outputCount: Int = 1,
-			recipeId: Identifier = getItemId(output),
-		) {
-			require(category != null && recipeProvider != null) {
-				"You must initialize the recipe builder with a category and a recipe provider"
-			}
-			
-			var jsonBuilder = ShapelessRecipeJsonBuilder(category, output, outputCount)
-			ingredients.forEach { jsonBuilder = jsonBuilder.input(it) }
-			criterions.forEach { jsonBuilder = jsonBuilder.criterion(it.first, it.second) }
-			jsonBuilder.group(group).offerTo(recipeProvider, recipeId)
-		}
 	}
+	
+	data class Input(val )
 	
 	fun generateShapedRecipe(
 		category: RecipeCategory = RecipeCategory.MISC,
@@ -276,6 +312,7 @@ class RecipeHandler(
 		if (reversible) generateShapelessRecipe(getCategory(input)).input(output to 9).output(input)
 	}
 	
+	//
 	fun generateMetalRecipe(
 		nugget: Item,
 		ingot: Item,
@@ -318,5 +355,11 @@ class RecipeHandler(
 			"##",
 			"##"
 		)
+	}
+	
+	companion object {
+		fun shapeless(lambda: ShapelessRecipeBuilder.() -> Unit): ShapelessRecipeBuilder {
+			return ShapelessRecipeBuilder().apply(lambda)
+		}
 	}
 }

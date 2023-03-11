@@ -17,7 +17,7 @@ import kotlin.math.sqrt
 class BundleTooltipComponent constructor(
 	override val data: BundleTooltipData,
 	override val screen: Screen? = null
-) : AdaptiveTooltipComponent(data, screen) {
+) : AbstractTooltipComponent(data, screen) {
 	private val texture = minecraftID("textures/gui/container/bundle.png")
 	private var inventory = data.inventory
 	private var occupancy = data.bundleOccupancy

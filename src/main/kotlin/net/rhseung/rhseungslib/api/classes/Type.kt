@@ -5,15 +5,19 @@ import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.primaryConstructor
 
 class Type<T: Any> constructor(
-	val type: KClass<out T>
+	private val type: KClass<out T>
 ) {
 	val annotations = type.annotations
 	val name = type.java.simpleName
 	val subclasses = type.nestedClasses
 	val companion = type.companionObjectInstance
 	
-	fun call(vararg parameters: Any?): T {
+	operator fun invoke(vararg parameters: Any?): T {
 		return type.createInstance(*parameters)
+	}
+	
+	fun isInstance(obj: Any?): Boolean {
+		return type.isInstance(obj);
 	}
 	
 	companion object {

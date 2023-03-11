@@ -5,8 +5,8 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricModelProvider
 import net.minecraft.data.client.BlockStateModelGenerator
 import net.minecraft.data.client.ItemModelGenerator
 import net.rhseung.rhseungslib.registration.RegistryHelper
-import net.rhseung.rhseungslib.things.BasicBlock
-import net.rhseung.rhseungslib.things.BasicItem
+import net.rhseung.rhseungslib.things.blocks.BasicBlock
+import net.rhseung.rhseungslib.things.blocks.BasicItem
 
 abstract class AbstractModelProvider (
 	val output: FabricDataOutput

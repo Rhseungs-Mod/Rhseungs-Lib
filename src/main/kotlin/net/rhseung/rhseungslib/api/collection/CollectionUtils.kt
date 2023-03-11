@@ -1,6 +1,13 @@
 package net.rhseung.rhseungslib.api.collection
 
+import net.rhseung.rhseungslib.api.classes.Type
+import kotlin.reflect.KClass
+
+typealias InstancePair<K, V> = Pair<Type<out K>, V>
+typealias TypePair<K, V> = Pair<Type<out K>, Type<out V>>
+
 object CollectionUtils {
+	
 	fun <T> Collection<T>.dropLast(n: Int): Collection<T> {
 		require(n >= 0) { "n: $n is less than zero." }
 		return this.take((this.count() - n).coerceAtLeast(0))

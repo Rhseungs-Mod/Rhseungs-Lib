@@ -4,7 +4,7 @@ import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.item.BundleTooltipData;
 import net.minecraft.client.item.TooltipData;
 import net.rhseung.rhseungslib.render.tooltip.component.BundleTooltipComponent;
-import net.rhseung.rhseungslib.render.tooltip.component.AdaptiveTooltipComponent;
+import net.rhseung.rhseungslib.render.tooltip.component.AbstractTooltipComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,8 +17,8 @@ public abstract class ComponentMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private static void of_mixin(TooltipData data, CallbackInfoReturnable<AdaptiveTooltipComponent> cir) {
-        AdaptiveTooltipComponent ret;
+    private static void of_mixin(TooltipData data, CallbackInfoReturnable<AbstractTooltipComponent> cir) {
+        AbstractTooltipComponent ret;
 
         if (data instanceof BundleTooltipData)
             ret = new BundleTooltipComponent((BundleTooltipData) data, null);
